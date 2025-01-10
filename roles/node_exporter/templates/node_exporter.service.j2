@@ -1,0 +1,12 @@
+[Unit]
+Description=Node Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=node_exporter
+ExecStart={{node_exporter_install_dir}}/node_exporter --web.listen-address=:{{ node_exporter_port }} {% if node_exporter_enable_tls or node_exporter_enable_basic_auth %}--web.config=/etc/node_exporter/web-config.yml{% endif %}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,74 @@
+- name: Get system architecture
+  set_fact:
+    system_arch: "{{ ansible_architecture | lower }}"
+
+- name: Create a user for Node Exporter
+  ansible.builtin.user:
+    name: {{node_exporter_user}}
+    state: present
+    shell: /usr/sbin/nologin
+    create_home: no
+
+- name: Check if Node Exporter binary is available locally in Ansible files directory
+  stat:
+    path: "{{ playbook_dir }}/files/node_exporter-{{ node_exporter_version }}-{{ system_arch }}.tar.gz"
+  register: node_exporter_tar_stat
+
+- name: Fetch latest Node Exporter release information from GitHub API
+  shell: |
+    curl -sL https://api.github.com/repos/prometheus/node_exporter/releases/latest | jq -r '.tag_name, .assets[].name'
+  register: latest_release_info
+  when: node_exporter_version == ""
+  changed_when: false
+
+- name: Set Node Exporter version from GitHub API
+  set_fact:
+    node_exporter_version: "{{ latest_release_info.stdout_lines[0] }}"
+  when: node_exporter_version == ""
+
+- name: Check if the latest release asset supports the system architecture
+  set_fact:
+    node_exporter_filename: "{{ latest_release_info.stdout_lines | select('match', system_arch) | first }}"
+  when: node_exporter_version == ""
+
+- name: Download Node Exporter binary if not already available in Ansible files directory
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/{{ node_exporter_version }}/{{ node_exporter_filename }}"
+    dest: "{{ playbook_dir }}/files/{{ node_exporter_filename }}"
+  when: not node_exporter_tar_stat.stat.exists
+
+- name: Copy Node Exporter tar file from Ansible files directory to remote server
+  copy:
+    src: "{{ playbook_dir }}/files/{{ node_exporter_filename }}"
+    dest: "/tmp/node_exporter.tar.gz"
+
+- name: Extract Node Exporter binary
+  unarchive:
+    src: "/tmp/node_exporter.tar.gz"
+    dest: "/tmp/"
+    remote_src: yes
+
+- name: Find extracted directory
+  find:
+    paths: "/tmp/"
+    patterns: "node_exporter*"
+  register: extracted_dir
+
+- name: Copy Node Exporter binary to /usr/local/bin
+  ansible.builtin.copy:
+    src: "{{ extracted_dir.files[0].path }}/node_exporter"
+    dest: "{{node_exporter_install_dir}}/node_exporter"
+    owner: {{node_exporter_user}}
+    group: {{node_exporter_user}}
+    mode: '0755'
+
+- name: Clean up temporary Node Exporter tar file
+  file:
+    path: "/tmp/node_exporter.tar.gz"
+    state: absent
+
+- name: Clean up extracted directory
+  file:
+    path: "{{ extracted_dir.files[0].path }}"
+    state: absent
+

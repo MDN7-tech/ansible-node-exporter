@@ -1,0 +1,12 @@
+# Web server configuration for Node Exporter
+
+{% if node_exporter_enable_tls %}
+tls_server_config:
+  cert_file: "{{ node_exporter_cert_path }}/{{ cert_files.files[0].path | basename }}"
+  key_file: "{{ node_exporter_key_path }}/{{ key_files.files[0].path | basename }}"
+{% endif %}
+
+{% if node_exporter_enable_basic_auth %}
+basic_auth_users:
+  {{ node_exporter_basic_auth_user }}: {{ node_exporter_basic_auth_password | password_hash('bcrypt') }}
+{% endif %}

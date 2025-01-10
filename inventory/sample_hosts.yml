@@ -1,0 +1,12 @@
+all:
+  children:
+    company_name:
+      hosts:
+        company_name_node1:
+          ansible_host: 172.37.54.10
+        company_name_node2:
+          ansible_host: 172.38.54.11
+
+    ungrouped: {}
+
+

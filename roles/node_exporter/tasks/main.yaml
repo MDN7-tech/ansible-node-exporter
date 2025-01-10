@@ -1,0 +1,7 @@
+---
+- name: Installing Node Exporter
+  import_tasks: install.yaml
+
+- name: Config and start Node Exporter
+  import_tasks: config.yaml
+  notify: Start {{node_exporter_service_name}}

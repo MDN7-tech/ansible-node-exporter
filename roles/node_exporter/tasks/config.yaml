@@ -1,0 +1,54 @@
+- name: Find TLS certificate file in the Ansible files directory
+  find:
+    paths: "{{ playbook_dir }}/files/"
+    patterns: "*.crt"
+  register: cert_files
+  when: node_exporter_enable_tls
+
+- name: Find TLS key file in the Ansible files directory
+  find:
+    paths: "{{ playbook_dir }}/files/"
+    patterns: "*.key"
+  register: key_files
+  when: node_exporter_enable_tls
+
+- name: Fail if TLS certificate file is not found
+  fail:
+    msg: "TLS certificate file is missing. Please provide the certificate file for Node Exporter."
+  when: cert_files.matched == 0 and node_exporter_enable_tls
+
+- name: Fail if TLS key file is not found
+  fail:
+    msg: "TLS key file is missing. Please provide the key file for Node Exporter."
+  when: key_files.matched == 0 and node_exporter_enable_tls
+
+- name: Copy TLS certificate if found
+  ansible.builtin.copy:
+    src: "{{ item.path }}"
+    dest: "{{ node_exporter_cert_path }}/{{ item.path | basename }}"
+    owner: {{node_exporter_user}}
+    group: {{node_exporter_user}}
+    mode: '0644'
+  with_items: "{{ cert_files.files }}"
+  when: cert_files.matched > 0 and node_exporter_enable_tls
+
+- name: Copy TLS key if found
+  ansible.builtin.copy:
+    src: "{{ item.path }}"
+    dest: "{{ node_exporter_key_path }}/{{ item.path | basename }}"
+    owner: {{node_exporter_user}}
+    group: {{node_exporter_user}}
+    mode: '0600'
+  with_items: "{{ key_files.files }}"
+  when: key_files.matched > 0 and node_exporter_enable_tls
+
+
+- name: Create systemd service for Node Exporter
+  template:
+    src: node_exporter.service.j2
+    dest: "/etc/systemd/system/{{ node_exporter_service_name }}.service"
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  notify: Enable {{node_exporter_service_name}}  
