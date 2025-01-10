@@ -1,24 +1,24 @@
 ---
-- name: Restart {{node_exporter_service_name}}
+- name: Restart node_exporter
   become: true
   systemd:
-    name: {{node_exporter_service_name}}
+    name: node_exporter
     state: restarted
 
-- name: Start {{node_exporter_service_name}}
+- name: Start node_exporter
   become: true
   systemd:
-    name: {{node_exporter_service_name}}
+    name: node_exporter
     state: started
 
-- name: Stop {{node_exporter_service_name}}
+- name: Stop node_exporter
   become: true
   systemd:
-    name: {{node_exporter_service_name}}
+    name: node_exporter
     state: stopped
 
-- name: Enable {{node_exporter_service_name}}
+- name: Enable node_exporter
   become: true
   systemd:
-    name: {{node_exporter_service_name}}
+    name: node_exporter
     enabled: yes

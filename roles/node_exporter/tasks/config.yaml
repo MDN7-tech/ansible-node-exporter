@@ -1,46 +1,67 @@
 - name: Find TLS certificate file in the Ansible files directory
+  become: false
   find:
-    paths: "{{ playbook_dir }}/files/"
+    paths: "{{ role_path }}/files/"
     patterns: "*.crt"
   register: cert_files
+  delegate_to: localhost
   when: node_exporter_enable_tls
 
 - name: Find TLS key file in the Ansible files directory
+  become: false
   find:
-    paths: "{{ playbook_dir }}/files/"
+    paths: "{{ role_path }}/files/"
     patterns: "*.key"
-  register: key_files
+  register: key_file
+  delegate_to: localhost
+
   when: node_exporter_enable_tls
 
 - name: Fail if TLS certificate file is not found
   fail:
     msg: "TLS certificate file is missing. Please provide the certificate file for Node Exporter."
-  when: cert_files.matched == 0 and node_exporter_enable_tls
+  when: node_exporter_enable_tls and cert_files.matched == 0
 
 - name: Fail if TLS key file is not found
   fail:
     msg: "TLS key file is missing. Please provide the key file for Node Exporter."
-  when: key_files.matched == 0 and node_exporter_enable_tls
+  when: node_exporter_enable_tls and key_files.matched == 0
 
 - name: Copy TLS certificate if found
   ansible.builtin.copy:
     src: "{{ item.path }}"
     dest: "{{ node_exporter_cert_path }}/{{ item.path | basename }}"
-    owner: {{node_exporter_user}}
-    group: {{node_exporter_user}}
+    owner: "{{node_exporter_user}}"
+    group: "{{node_exporter_user}}"
     mode: '0644'
   with_items: "{{ cert_files.files }}"
-  when: cert_files.matched > 0 and node_exporter_enable_tls
+  when: node_exporter_enable_tls and cert_files.matched > 0 
 
 - name: Copy TLS key if found
   ansible.builtin.copy:
     src: "{{ item.path }}"
     dest: "{{ node_exporter_key_path }}/{{ item.path | basename }}"
-    owner: {{node_exporter_user}}
-    group: {{node_exporter_user}}
+    owner: "{{node_exporter_user}}"
+    group: "{{node_exporter_user}}"
     mode: '0600'
   with_items: "{{ key_files.files }}"
-  when: key_files.matched > 0 and node_exporter_enable_tls
+  when:  node_exporter_enable_tls and key_files.matched > 0
+
+- name: Create directory for node_exporter config if not exists
+  file:
+    path: "/etc/node_exporter"
+    state: directory
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
+    mode: '0755'
+
+- name: Copy Web config 
+  template:
+    src: "web-config.yml.j2"
+    dest: "/etc/node_exporter/web-config.yml"
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
+    mode: '0755'
 
 
 - name: Create systemd service for Node Exporter
@@ -51,4 +72,4 @@
 - name: Reload systemd daemon
   systemd:
     daemon_reload: yes
-  notify: Enable {{node_exporter_service_name}}  
+

@@ -4,4 +4,9 @@
 
 - name: Config and start Node Exporter
   import_tasks: config.yaml
-  notify: Start {{node_exporter_service_name}}
+
+- name: Enable and start node exporter
+  systemd:
+    name: "{{node_exporter_service_name}}" 
+    enabled: true
+    state: started
