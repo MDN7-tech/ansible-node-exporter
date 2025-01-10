@@ -74,7 +74,7 @@
     remote_src: yes
 - name: Clean up temporary Node Exporter tar file
   file:
-    path: "/tmp/node_exporter.tar.gz"
+    path: "/tmp/{{ node_exporter_filename }}"
     state: absent
 
 - name: Clean up extracted directory
