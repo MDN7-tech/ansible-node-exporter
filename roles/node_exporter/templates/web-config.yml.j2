@@ -8,5 +8,5 @@ tls_server_config:
 
 {% if node_exporter_enable_basic_auth %}
 basic_auth_users:
-  {{ node_exporter_basic_auth_user }}: {{ node_exporter_basic_auth_password | password_hash('bcrypt') }}
+  {{ node_exporter_basic_auth_user }}: "{{ node_exporter_basic_auth_password_hashed }}"
 {% endif %}

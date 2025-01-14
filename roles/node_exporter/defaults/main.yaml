@@ -5,7 +5,7 @@ node_exporter_install_dir: /usr/local/bin
 node_exporter_service_name: node_exporter
 node_exporter_release_url: https://github.com/prometheus/node_exporter/releases/latest
 node_exporter_enable_tls: false
-node_exporter_enable_basic_auth: true
+node_exporter_enable_basic_auth: false
 node_exporter_cert_path: /etc/node_exporter/certs
 node_exporter_key_path: /etc/node_exporter/certs
 node_exporter_basic_auth_user: admin

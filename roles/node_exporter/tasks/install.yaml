@@ -1,3 +1,46 @@
+- name: Ensure node_exporter group exists
+  ansible.builtin.group:
+    name: "{{ node_exporter_user }}"
+    state: present
+    system: yes
+
+- name: Ensure node_exporter user exists
+  ansible.builtin.user:
+    name: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
+    state: present
+    system: yes
+    shell: /usr/sbin/nologin
+
+- name: Install apache2-utils (htpasswd) on Debian/Ubuntu
+  apt:
+    name: apache2-utils
+    state: present
+  when: ansible_facts['distribution'] in ['Debian', 'Ubuntu'] and node_exporter_enable_basic_auth
+
+- name: Install httpd-tools (htpasswd) on CentOS/RHEL
+  yum:
+    name: httpd-tools
+    state: present
+  when: ansible_facts['distribution'] in ['CentOS', 'RedHat'] and node_exporter_enable_basic_auth
+
+- name: Install httpd-tools (htpasswd) on Fedora
+  dnf:
+    name: httpd-tools
+    state: present
+  when: ansible_facts['distribution'] == 'Fedora' and node_exporter_enable_basic_auth
+
+
+- name: Create a hashed password using htpasswd
+  command: htpasswd -bnBC 10 "" "{{ node_exporter_basic_auth_password }}" 
+  register: hashed_password
+  when: node_exporter_enable_basic_auth
+
+- name: Set the hashed password for Basic Auth
+  set_fact:
+    node_exporter_basic_auth_password_hashed: "{{ hashed_password.stdout }}"
+  when: node_exporter_enable_basic_auth
+
 - name: Define Node Exporter filename mapping
   set_fact:
     node_exporter_mapping:
