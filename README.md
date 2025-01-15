@@ -1,7 +1,3 @@
-Got it! Here's a more streamlined and focused version of the README without the Molecule testing section:
-
----
-
 # Node Exporter Ansible Role
 
 This repository provides an Ansible role for deploying and configuring **Node Exporter**, a monitoring agent for Prometheus. Node Exporter exposes machine-level metrics like CPU usage, memory usage, disk I/O, and network statistics, which Prometheus can scrape for monitoring purposes.
